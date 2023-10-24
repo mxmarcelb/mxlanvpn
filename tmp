@@ -1,0 +1,8 @@
+274 $ip - stavi lokalni
+
+
+/etc/openvpn/server/client-common.txt
+/etc/openvpn/server/server.conf
+
+sudo ufw allow 1194
+sudo ufw allow in on tun0 to any port 8081
