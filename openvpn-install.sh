@@ -101,7 +101,7 @@ new_client () {
 	echo "<tls-crypt>"
 	sed -ne '/BEGIN OpenVPN Static key/,$ p' /etc/openvpn/server/tc.key
 	echo "</tls-crypt>"
-	} > ~/"$client".ovpn		# primijeni ovu putanju na neku smislenu npr /opt/mxlanvpn/clients/
+	} > /opt/mxlanvpn/clients/"$client".ovpn
 }
 
 if [[ ! -e /etc/openvpn/server/server.conf ]]; then
@@ -114,6 +114,7 @@ if [[ ! -e /etc/openvpn/server/server.conf ]]; then
 	fi
 	clear
 	echo 'Welcome to this OpenVPN road warrior installer!'
+
 	# If system has a single IPv4, it is selected automatically. Else, ask the user
 	if [[ $(ip -4 addr | grep inet | grep -vEc '127(\.[0-9]{1,3}){3}') -eq 1 ]]; then
 		ip=$(ip -4 addr | grep inet | grep -vE '127(\.[0-9]{1,3}){3}' | cut -d '/' -f 1 | grep -oE '[0-9]{1,3}(\.[0-9]{1,3}){3}')
@@ -130,6 +131,8 @@ if [[ ! -e /etc/openvpn/server/server.conf ]]; then
 		[[ -z "$ip_number" ]] && ip_number="1"
 		ip=$(ip -4 addr | grep inet | grep -vE '127(\.[0-9]{1,3}){3}' | cut -d '/' -f 1 | grep -oE '[0-9]{1,3}(\.[0-9]{1,3}){3}' | sed -n "$ip_number"p)
 	fi
+
+
 	# If $ip is a private IP address, the server must be behind NAT
 	# if echo "$ip" | grep -qE '^(10\.|172\.1[6789]\.|172\.2[0-9]\.|172\.3[01]\.|192\.168)'; then
 	# 	echo
@@ -162,44 +165,47 @@ if [[ ! -e /etc/openvpn/server/server.conf ]]; then
 	# 	[[ -z "$ip6_number" ]] && ip6_number="1"
 	# 	ip6=$(ip -6 addr | grep 'inet6 [23]' | cut -d '/' -f 1 | grep -oE '([0-9a-fA-F]{0,4}:){1,7}[0-9a-fA-F]{0,4}' | sed -n "$ip6_number"p)
 	# fi
-	echo
-	echo "Which protocol should OpenVPN use?"
-	echo "   1) UDP (recommended)"
-	echo "   2) TCP"
-	read -p "Protocol [1]: " protocol
-	until [[ -z "$protocol" || "$protocol" =~ ^[12]$ ]]; do
-		echo "$protocol: invalid selection."
-		read -p "Protocol [1]: " protocol
-	done
-	case "$protocol" in
-		1|"") 
-		protocol=udp
-		;;
-		2) 
-		protocol=tcp
-		;;
-	esac
-	echo
-	echo "What port should OpenVPN listen to?"
-	read -p "Port [1194]: " port
-	until [[ -z "$port" || "$port" =~ ^[0-9]+$ && "$port" -le 65535 ]]; do
-		echo "$port: invalid port."
-		read -p "Port [1194]: " port
-	done
+	# echo
+	# echo "Which protocol should OpenVPN use?"
+	# echo "   1) UDP (recommended)"
+	# echo "   2) TCP"
+	# read -p "Protocol [1]: " protocol
+	# until [[ -z "$protocol" || "$protocol" =~ ^[12]$ ]]; do
+	# 	echo "$protocol: invalid selection."
+	# 	read -p "Protocol [1]: " protocol
+	# done
+	# case "$protocol" in
+	# 	1|"") 
+	# 	protocol=udp
+	# 	;;
+	# 	2) 
+	# 	protocol=tcp
+	# 	;;
+	# esac
+	protocol=udp
+	# echo
+	# echo "What port should OpenVPN listen to?"
+	# read -p "Port [1194]: " port
+	# until [[ -z "$port" || "$port" =~ ^[0-9]+$ && "$port" -le 65535 ]]; do
+	# 	echo "$port: invalid port."
+	# 	read -p "Port [1194]: " port
+	# done
+	port="1194"
 	[[ -z "$port" ]] && port="1194"
-	echo
-	echo "Select a DNS server for the clients:"
-	echo "   1) Current system resolvers"
-	echo "   2) Google"
-	echo "   3) 1.1.1.1"
-	echo "   4) OpenDNS"
-	echo "   5) Quad9"
-	echo "   6) AdGuard"
-	read -p "DNS server [1]: " dns
-	until [[ -z "$dns" || "$dns" =~ ^[1-6]$ ]]; do
-		echo "$dns: invalid selection."
-		read -p "DNS server [1]: " dns
-	done
+	# echo
+	# echo "Select a DNS server for the clients:"
+	# echo "   1) Current system resolvers"
+	# echo "   2) Google"
+	# echo "   3) 1.1.1.1"
+	# echo "   4) OpenDNS"
+	# echo "   5) Quad9"
+	# echo "   6) AdGuard"
+	# read -p "DNS server [1]: " dns
+	# until [[ -z "$dns" || "$dns" =~ ^[1-6]$ ]]; do
+	# 	echo "$dns: invalid selection."
+	# 	read -p "DNS server [1]: " dns
+	# done
+	dns=1
 	echo
 	echo "Enter a name for the first client:"
 	read -p "Name [client]: " unsanitized_client
@@ -439,7 +445,8 @@ verb 3" > /etc/openvpn/server/client-common.txt
 	echo
 	echo "Finished!"
 	echo
-	echo "The client configuration is available in:" ~/"$client.ovpn"
+	echo "The client configuration is available in:" /opt/mxlanvpn/clients/"$client.ovpn"
+	echo "or download via http://<lanip>:8080/mxlanvpn/$client.ovpn"
 	echo "New clients can be added by running this script again."
 else
 	clear
@@ -471,7 +478,8 @@ else
 			# Generates the custom client.ovpn
 			new_client
 			echo
-			echo "$client added. Configuration available in:" ~/"$client.ovpn"
+			echo "$client added. Configuration available in:" /opt/mxlanvpn/clients/"$client.ovpn"
+			echo "or download via http://<lanip>:8080/mxlanvpn/$client.ovpn"
 			exit
 		;;
 		2)
@@ -503,6 +511,7 @@ else
 				./easyrsa --batch revoke "$client"
 				./easyrsa --batch --days=3650 gen-crl
 				rm -f /etc/openvpn/server/crl.pem
+				rm /opt/mxlanvpn/clients/"$client".ovpn
 				cp /etc/openvpn/server/easy-rsa/pki/crl.pem /etc/openvpn/server/crl.pem
 				# CRL is read with each client connection, when OpenVPN is dropped to nobody
 				chown nobody:"$group_name" /etc/openvpn/server/crl.pem
