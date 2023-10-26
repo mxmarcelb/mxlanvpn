@@ -11,6 +11,8 @@ sudo chmod +x /opt/mxlanvpn/*.sh
 
 # Konfiguracija OpenVPN-a
 sudo apt install ufw -y
+sudo ufw allow 22
+sudo ufw enable
 sudo bash /opt/mxlanvpn/openvpn-install.sh
 sudo ufw allow 1194
 sudo ufw allow in on tun0 to any port 80
